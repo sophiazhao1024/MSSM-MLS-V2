@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "scope": "Sanitized full-budget single-development-seed comparison; not raw execution journals, cache import data, original author source or a completed independent multi-seed replication.",
+  "seed": 0,
+  "logical_budget_each": 20000,
+  "target_policy": "paper-higgs",
+  "datasets": {
+    "v5": {
+      "jsonl_file": "v5-seed0.jsonl",
+      "jsonl_sha256": "d015bff18052027558d9dce3da708d233a0b52e59a3f9e988975bfeb9010c531",
+      "csv_file": "v5-seed0.csv",
+      "csv_sha256": "185f979281aad4fcf7dd6d714bb98c74c45ad421433d9145123a94a6f2e7288a",
+      "source_run_label": "dev-gp-v5-s0",
+      "original_records_sha256": "ed3b808cbb536b6a88286a3650939c107a43416216aa9e61e71303908f2b7605",
+      "rows": 20000,
+      "status": "completed",
+      "cache_hits_retained_in_logical_budget": 3795,
+      "inherited_initial_attempts": 1000
+    },
+    "strong_reference": {
+      "jsonl_file": "strong_reference-seed0.jsonl",
+      "jsonl_sha256": "fb4533f06bc2b0b8fabbed88378de7f77dbe55f5facefd3a93ac8c1c1475c7cf",
+      "csv_file": "strong_reference-seed0.csv",
+      "csv_sha256": "ab72ed4a9e6490445156d98dc489f147fd987f26c5e51f9a17deedd3d1743c24",
+      "source_run_label": "budget20000-baseline-detached1-s0",
+      "original_records_sha256": "c06d447a6a2f89aa01aa4c79910fc2e926eb425c18f7b10c67cbbcec244e42dc",
+      "rows": 20000,
+      "status": "completed",
+      "cache_hits_retained_in_logical_budget": 2032,
+      "inherited_initial_attempts": 0
+    },
+    "random": {
+      "jsonl_file": "random-seed0.jsonl",
+      "jsonl_sha256": "22414b71172ac43b9e0c0d96e737fea76fb7a99005247449ac4fcd59f177a175",
+      "csv_file": "random-seed0.csv",
+      "csv_sha256": "1c1ac43a5e278a8868d3b24c4867469ad961d02f462bec32034bec7b4b63dc3e",
+      "source_run_label": "budget20000-random-detached1-s0",
+      "original_records_sha256": "c0577bccde4097e186d1fc0ec9bcd593ca9d56db5ed139d4a2f32dd2f61d77dc",
+      "rows": 20000,
+      "status": "completed",
+      "cache_hits_retained_in_logical_budget": 4899,
+      "inherited_initial_attempts": 0
+    }
+  },
+  "removed": "All personal/local paths, provenance workdirs, commands, timings, free-text reasons, surrogate predictions and execution-cache keys. All logical attempts, coordinates, statuses, available complete labels, HB and origin are retained.",
+  "initial_data_note": "V5 inherits the same saved1000 true initial evaluations with zero new backend calls for that prefix; a reviewed transform drops unsupported top-level HB metadata on105 failed inherited rows (22 hb_allowed changes), preserving x/status/available observations and zero initial targets. Strong/random retain their original recorded initial HB metadata.",
+  "paper_pdf_sha256": "5c2f5e7769591fd6efd39a7119e986dd6765b1ffd981e53b367be7ef76be2567",
+  "v5_full_development_evidence_sha256": "2733aa36da76be9851f176ead6b0db2f83a09b0cb99c42d4444b6963d8ae7f42",
+  "v5_selection_assessment_sha256": "a0b6b6e36047ee4830398e26878ced6a529a34eca09770dc555da7856f6b2609"
+}

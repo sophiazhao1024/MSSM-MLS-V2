@@ -1,0 +1,155 @@
+{
+  "schema": 1,
+  "single_development_seed_only": true,
+  "completed_independent_replications": 0,
+  "old_protocol_qualified": false,
+  "old_minimum_development_targets": 4673,
+  "methods": {
+    "v5": {
+      "attempts": 20000,
+      "unique_coordinates": 20000,
+      "targets": 4642,
+      "targets_eq7": 6728,
+      "target_fraction": 0.2321,
+      "eq7_fraction": 0.3364,
+      "status_counts": {
+        "ok": 15364,
+        "unphysical": 4085,
+        "tool_error": 551
+      },
+      "by_origin": {
+        "saved_initial": {
+          "attempts": 1000,
+          "ok": 70,
+          "targets": 0,
+          "targets_eq7": 0,
+          "unphysical": 825,
+          "tool_error": 105
+        },
+        "random": {
+          "attempts": 3800,
+          "unphysical": 3138,
+          "targets": 0,
+          "targets_eq7": 0,
+          "tool_error": 431,
+          "ok": 231
+        },
+        "exploit": {
+          "attempts": 11400,
+          "ok": 11360,
+          "targets": 4626,
+          "targets_eq7": 6085,
+          "unphysical": 32,
+          "tool_error": 8
+        },
+        "uncertain": {
+          "attempts": 3800,
+          "ok": 3703,
+          "targets": 16,
+          "targets_eq7": 643,
+          "unphysical": 90,
+          "tool_error": 7
+        }
+      },
+      "grid_occupied": {
+        "20": 30,
+        "40": 94,
+        "100": 448
+      },
+      "packing_radius": 0.001,
+      "packing_count": 3332,
+      "packing_scope": "Lexicographic greedy distance>1e-3 in the full unit parameter box; not statistical independence or maximum packing"
+    },
+    "strong_reference": {
+      "attempts": 20000,
+      "unique_coordinates": 20000,
+      "targets": 4248,
+      "targets_eq7": 10974,
+      "target_fraction": 0.2124,
+      "eq7_fraction": 0.5487,
+      "status_counts": {
+        "ok": 16629,
+        "unphysical": 3118,
+        "tool_error": 253
+      },
+      "by_origin": {
+        "initial": {
+          "attempts": 1000,
+          "ok": 70,
+          "targets": 0,
+          "targets_eq7": 0,
+          "unphysical": 825,
+          "tool_error": 105
+        },
+        "guided": {
+          "attempts": 18095,
+          "ok": 16505,
+          "targets": 4248,
+          "targets_eq7": 10974,
+          "unphysical": 1523,
+          "tool_error": 67
+        },
+        "explore": {
+          "attempts": 905,
+          "ok": 54,
+          "targets": 0,
+          "targets_eq7": 0,
+          "unphysical": 770,
+          "tool_error": 81
+        }
+      },
+      "grid_occupied": {
+        "20": 30,
+        "40": 94,
+        "100": 398
+      },
+      "packing_radius": 0.001,
+      "packing_count": 3291,
+      "packing_scope": "Lexicographic greedy distance>1e-3 in the full unit parameter box; not statistical independence or maximum packing"
+    },
+    "random": {
+      "attempts": 20000,
+      "unique_coordinates": 20000,
+      "targets": 0,
+      "targets_eq7": 1,
+      "target_fraction": 0.0,
+      "eq7_fraction": 5e-05,
+      "status_counts": {
+        "ok": 1279,
+        "unphysical": 16602,
+        "tool_error": 2119
+      },
+      "by_origin": {
+        "initial": {
+          "attempts": 1000,
+          "ok": 70,
+          "targets": 0,
+          "targets_eq7": 0,
+          "unphysical": 825,
+          "tool_error": 105
+        },
+        "random": {
+          "attempts": 19000,
+          "ok": 1209,
+          "targets": 0,
+          "targets_eq7": 1,
+          "unphysical": 15777,
+          "tool_error": 2014
+        }
+      },
+      "grid_occupied": {
+        "20": 0,
+        "40": 0,
+        "100": 0
+      },
+      "packing_radius": 0.001,
+      "packing_count": 0,
+      "packing_scope": "Lexicographic greedy distance>1e-3 in the full unit parameter box; not statistical independence or maximum packing"
+    }
+  },
+  "absolute_target_gain_vs_strong": 394,
+  "percentage_point_gain_vs_strong": 1.97,
+  "relative_target_gain_vs_strong": 0.09274952919020718,
+  "eq7_only_change_vs_strong": "Lower:6728 vs10974; do not present Eq7-only as improved",
+  "release_scope": "Completed V5 single-development-seed study; original >=10% development condition not met, and no completed independent V5 replication."
+}

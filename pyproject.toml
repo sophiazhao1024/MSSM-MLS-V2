@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mssm-mls-modern"
+version = "0.3.0"
+description = "MSSM parameter scans with the MLS method"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.12"
+dependencies = ["numpy>=1.24,<3", "torch>=2.2,<3", "matplotlib>=3.7,<4"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10", "mpmath>=1.3,<2"]
+dev = ["pytest>=8,<10", "mpmath>=1.3,<2"]
+
+[project.scripts]
+mssm-mls-modern = "mssm_mls_modern.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

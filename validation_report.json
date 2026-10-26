@@ -1,0 +1,244 @@
+{
+  "schema": 1,
+  "project": "MSSM MLS",
+  "software_version": "0.3.0",
+  "scientific_experiment_label": "V5",
+  "created_utc": "2026-10-25T08:25:22.421575+00:00",
+  "licence": "GPL-3.0-or-later",
+  "scope": "Completed V5 single-development-seed study; software/packaging verification is separate from physical performance evidence.",
+  "scientific_scope": {
+    "seed": 0,
+    "attempts_each": 20000,
+    "v5_targets": 4642,
+    "strong_reference_targets": 4248,
+    "random_targets": 0,
+    "absolute_target_gain": 394,
+    "percentage_point_gain": 1.97,
+    "relative_gain_percent": 9.274952919020715,
+    "v5_eq7_only": 6728,
+    "strong_eq7_only": 10974,
+    "eq7_only_improved": false,
+    "old_protocol_minimum_targets": 4673,
+    "old_protocol_qualified": false,
+    "completed_independent_V5_replications": 0,
+    "paper80percent_reproduced": false,
+    "comparison_to_original_author_binary_demonstrated": false
+  },
+  "core_preservation": {
+    "scientific_modules": 19,
+    "frozen_configuration_files": 5,
+    "all_bytes_match_audited_V5": true,
+    "record": "docs/core_preservation.json",
+    "record_sha256": "9b84629ba788f57bdc5b4fafbbc722b17e000fbf44d9cfb6b5777181b3cb2c83",
+    "package_guard_sha256": "83d56c9fe1b9fa5fa92a3bb9695fc25757fc3c4879f6c4dbd6bc15412b06ee04"
+  },
+  "software_tests": {
+    "original_cases_retained": 262,
+    "new_portable_cases": 17,
+    "passed": 279,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit": "docs/software_tests.xml",
+    "junit_sha256": "a697ddf62907713f1101398b62bb70d7a8f1e0ac71f0eb6816be18f9aae84516",
+    "test_portability_record": "docs/test_portability.json",
+    "test_portability_sha256": "c189fad48532e13c9a7965c1e2dcc98102c90b87f0cb3a06d4cd9c0dc60df714",
+    "adapted_files": [
+      "test_public_cli_guard.py",
+      "test_runtime_guard.py",
+      "test_equal_quality_coverage.py",
+      "test_feasibility_entropy.py"
+    ],
+    "adaptation": "Private test-only oracle paths replaced with bundled byte-identical snapshots. Original byte comparison and three-way settings equality assertions retained. No scientific assertions removed.",
+    "first_packaging_check": {
+      "passed": 273,
+      "failed": 2,
+      "raw_log_sha256": "e6d3c3207e8e1dc8235e965d8b6a5cd787c9ef657509c466ae0cc03a344ddaa2",
+      "issue": "Relocated old runner oracle expected sibling source files for its metadata identity; bundling its complete unchanged source snapshot fixed the portability issue. No scientific code changed."
+    }
+  },
+  "install_and_cli_checks": {
+    "editable_install_passed": true,
+    "wheel_build_install_passed": true,
+    "wheel_checks": {
+      "wheel_import_verified": true,
+      "core_modules_bytes_verified": 19,
+      "version": "0.3.0",
+      "synthetic_GP_scan_attempts": 32,
+      "real_physics_calls": 0,
+      "installed_wheel_console_help_passed": true,
+      "final_wheel_sha256": "553d401b87147bbfca386ee596fa8d2b9bc7a9e1edbf5117af92dffb0ef169d1",
+      "final_wheel_metadata_neutral_and_dependencies_checked": true,
+      "final_wheel_install_and_import_rechecked": true
+    },
+    "cli_and_script_checks": [
+      {
+        "name": "editable_import_and_actual_runtime_dependencies",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "passed": true,
+        "stdout_first_line": "{\"editable_import_from_expected_checkout\": true, \"version\": \"0.3.0\", \"numpy\": \"2.5.4\", \"torch\": \"2.14.1\", \"matplotlib\": \"3.11.2\", \"scipy_required\": false}"
+      },
+      {
+        "name": "installed_cli_root_help",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "passed": true,
+        "stdout_first_line": "usage: mssm-mls-modern [-h] {doctor,point,scan,probe,replay,compare} ..."
+      },
+      {
+        "name": "installed_cli_scan_help",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "passed": true,
+        "stdout_first_line": "usage: mssm-mls-modern scan [-h] [--backend BACKEND] --output OUTPUT"
+      },
+      {
+        "name": "installed_cli_point_help",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "passed": true,
+        "stdout_first_line": "usage: mssm-mls-modern point [-h] [--backend BACKEND] --output OUTPUT"
+      },
+      {
+        "name": "installed_cli_doctor_help",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "passed": true,
+        "stdout_first_line": "usage: mssm-mls-modern doctor [-h] [--backend BACKEND]"
+      },
+      {
+        "name": "installed_cli_compare_help",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "passed": true,
+        "stdout_first_line": "usage: mssm-mls-modern compare [-h] --output OUTPUT runs [runs ...]"
+      },
+      {
+        "name": "installed_cli_replay_help",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "passed": true,
+        "stdout_first_line": "usage: mssm-mls-modern replay [-h] [--records RECORDS] [--settings SETTINGS]"
+      },
+      {
+        "name": "portable_benchmark_help",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "passed": true,
+        "stdout_first_line": "usage: benchmark.py [-h] {run,prepare-cap,resume-cap} ..."
+      },
+      {
+        "name": "physics_setup_help_no_download",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "passed": true,
+        "stdout_first_line": "usage: setup_physics.py [-h] [--vendor VENDOR] [--toolchain-bin TOOLCHAIN_BIN]"
+      },
+      {
+        "name": "warm_template_help_no_physics",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "passed": true,
+        "stdout_first_line": "usage: warm_template.py [-h] --backend BACKEND --point-dir POINT_DIR --output"
+      },
+      {
+        "name": "physics_build_shell_syntax",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "passed": true,
+        "stdout_first_line": null
+      },
+      {
+        "name": "micromegas_build_shell_syntax",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "passed": true,
+        "stdout_first_line": null
+      },
+      {
+        "name": "doctor_correctly_reports_unbuilt_tools",
+        "exit_code": 2,
+        "expected_exit_code": 2,
+        "passed": true,
+        "stdout_first_line": "{"
+      },
+      {
+        "name": "public_resume_refused_before_physics",
+        "exit_code": 2,
+        "expected_exit_code": 2,
+        "passed": true,
+        "stdout_first_line": null
+      }
+    ],
+    "dependency_install_scope": "A new disposable virtual environment installed this project editable and from wheel with no-deps/no-index, reusing the existing tested third-party dependency bytes through a local validation-only path. No network dependency resolution is claimed.",
+    "runtime_import_roots": [
+      "matplotlib",
+      "numpy",
+      "torch"
+    ],
+    "scipy_required": false,
+    "gaussian_log_cdf": "torch.special.log_ndtr",
+    "environment": {
+      "python": "3.12.14",
+      "platform_system": "Darwin",
+      "machine": "arm64",
+      "numpy": "2.5.4",
+      "torch": "2.14.1",
+      "matplotlib": "3.11.2",
+      "pytest": "9.1.1",
+      "mpmath": "1.3.0",
+      "setuptools": "84.2.1"
+    },
+    "doctor_unbuilt_tools": {
+      "expected_exit_code": 2,
+      "verified": true,
+      "ready_claimed": false
+    },
+    "source_downloads_or_external_library_builds_this_release": false,
+    "new_real_physics_evaluations": 0
+  },
+  "portable_control_checks": {
+    "fresh_cli_equivalence_methods": [
+      "modern",
+      "random",
+      "strong-reference"
+    ],
+    "recovery_scope": "Only verified strong-reference ProposalExhausted at a complete boundary; exact200m->1b->5b steps; no modern/historical/arbitrary partial recovery.",
+    "complete_boundary_cap_continuation_matches_uninterrupted_synthetic_new_cap": true,
+    "inherited_attempts_make_no_new_backend_calls": true,
+    "known_failure_budget_and_fifth_unknown_guard_verified": true,
+    "corrupt_suffix/checkpoint/settings/wrong_method/wrong_status/skipped_step_refused": true,
+    "source/bundle/output_nesting_refused_before_write": true,
+    "new_real_full_budget_scan_with_portable_wrapper_performed": false
+  },
+  "public_data": {
+    "rows": 60000,
+    "methods": 3,
+    "rows_per_method": 20000,
+    "csv_jsonl_equivalence_verified": true,
+    "targets_eq7_grid_packing_recomputed_from_all_rows": true,
+    "personal_paths_removed": true,
+    "source_provenance_record": "data/benchmark/provenance.json",
+    "source_provenance_sha256": "98c17848582b33b9fd66176b68bee83a4d5676135b3dc536d436c12414956ae5",
+    "summary_record": "data/benchmark/summary.json",
+    "summary_sha256": "c467f98da1d1ee0015252833ecc2197b26491089f65f95d202be866776fac501",
+    "packing_note": "Greedy geometric spacing count at unitbox radius1e-3; not statistical independence, physical resolution or maximum packing.",
+    "all_failures_initialization_and_cache_logical_attempts_retained": true,
+    "final101_102_103_scientific_data_included_or_read": false
+  },
+  "release_integrity": {
+    "tool": "tools/verify_release.py",
+    "manifest": "RELEASE_MANIFEST.json",
+    "note": "Final integrity is checked after creating the self-excluding manifest. Distribution ZIP is assembled separately after review."
+  },
+  "limitations": [
+    "Single selected development seed; no completed independent V5 replication.",
+    "Original >=10% development criterion not met; no retrospective pass.",
+    "Reconstructed physics cards/options and unknown original implementation details remain.",
+    "Wheel contains Python modules; full source checkout supplies configs, drivers, tests, tools and public data.",
+    "No new external source download/build or real physics scan was performed for packaging.",
+    "Portable controls do not provide arbitrary interrupted-journal recovery or promise an identical future trajectory across cap changes.",
+    "Default real scans create private point work directories; disk usage must be monitored. Workspace-specific storage deduplication is not part of this portable release."
+  ]
+}

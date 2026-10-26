@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "Cite the original MLS article and identify this V5 software, physics settings and single-development-seed evidence."
+title: "MSSM MLS"
+type: software
+version: "0.3.0"
+license: GPL-3.0-or-later
+authors:
+  - name: "MSSM MLS project contributors"
+abstract: "MSSM scans with a GP-assisted MLS update, real physics interfaces, NN/random comparators and full seed0 data. The original10% development condition was not met; evidence is limited to one development seed."
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Ren
+      given-names: Jie
+    - family-names: Wu
+      given-names: Lei
+    - family-names: Yang
+      given-names: Jin Min
+    - family-names: Zhao
+      given-names: Jun
+  title: "Exploring supersymmetry with machine learning"
+  journal: "Nuclear Physics B"
+  volume: "943"
+  start: "114613"
+  year: 2019
+  doi: "10.1016/j.nuclphysb.2019.114613"

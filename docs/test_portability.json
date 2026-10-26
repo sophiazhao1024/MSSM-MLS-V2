@@ -1,0 +1,75 @@
+{
+  "original_test_cases": 262,
+  "shipped_test_cases": 279,
+  "all_original_case_ids_retained": true,
+  "missing_original_case_ids": [],
+  "original_case_id_list_sha256": "8a4c8688293f08b3e1ae04f9d8f5615c463c36d24bf851bc6557c1069c844ff0",
+  "added_cases": [
+    "tests/test_portable_benchmark.py::test_fresh_control_preserves_public_cli_points_and_has_no_implicit_cache[modern]",
+    "tests/test_portable_benchmark.py::test_fresh_control_preserves_public_cli_points_and_has_no_implicit_cache[random]",
+    "tests/test_portable_benchmark.py::test_fresh_control_preserves_public_cli_points_and_has_no_implicit_cache[strong-reference]",
+    "tests/test_portable_benchmark.py::test_complete_boundary_cap_resume_matches_uninterrupted_new_cap_and_inherits_without_calls",
+    "tests/test_portable_benchmark.py::test_unsupported_or_corrupt_recovery_is_refused_before_backend[journal_suffix]",
+    "tests/test_portable_benchmark.py::test_unsupported_or_corrupt_recovery_is_refused_before_backend[journal_value]",
+    "tests/test_portable_benchmark.py::test_unsupported_or_corrupt_recovery_is_refused_before_backend[checkpoint_value]",
+    "tests/test_portable_benchmark.py::test_unsupported_or_corrupt_recovery_is_refused_before_backend[wrong_method]",
+    "tests/test_portable_benchmark.py::test_unsupported_or_corrupt_recovery_is_refused_before_backend[wrong_status]",
+    "tests/test_portable_benchmark.py::test_unsupported_or_corrupt_recovery_is_refused_before_backend[skip_cap]",
+    "tests/test_portable_benchmark.py::test_changed_derived_settings_or_source_cannot_be_resumed",
+    "tests/test_portable_benchmark.py::test_proof_bundle_cannot_write_inside_preserved_source_or_new_run[source]",
+    "tests/test_portable_benchmark.py::test_proof_bundle_cannot_write_inside_preserved_source_or_new_run[output]",
+    "tests/test_portable_benchmark.py::test_cap_continuation_retains_typed_guard_and_failed_attempt_budget[False]",
+    "tests/test_portable_benchmark.py::test_cap_continuation_retains_typed_guard_and_failed_attempt_budget[True]",
+    "tests/test_portable_benchmark.py::test_public_general_resume_stays_disabled_before_backend",
+    "tests/test_portable_benchmark.py::test_core_and_presets_inventory_unchanged_and_public_data_recompute"
+  ],
+  "changes": [
+    {
+      "file": "test_public_cli_guard.py",
+      "original_sha256": "acefb9f1b0df631b3e974430031a3f621dc62be6db17b8a41b667b6f333ec20a",
+      "shipped_sha256": "cedfd61bed71a26a27d14249b41f94aec18cc5d7a91956f7b2cfc8a9b74d705c",
+      "reason": "Portable reference-oracle paths and/or fixed shipped checksum/config identities replace private workspace-relative paths; same original test-case IDs retained."
+    },
+    {
+      "file": "test_runtime_guard.py",
+      "original_sha256": "1d617c9e144951015e21c848b2356677bb30f8ba6c364ee49c6f688336bcbc28",
+      "shipped_sha256": "0fea25c4b1ca3fb76071dbb458aa0a8257acbe75b8475fd97f9b661ed3cb64be",
+      "reason": "Portable reference-oracle paths and/or fixed shipped checksum/config identities replace private workspace-relative paths; same original test-case IDs retained."
+    },
+    {
+      "file": "test_equal_quality_coverage.py",
+      "original_sha256": "e3503af7fb95af34600bd407cec2ee1f5f03f07cfe75cfff0ab86f23cb5164c4",
+      "shipped_sha256": "c33e9d72a304df2286b26b0ee08cf51fdf8d85ff41f2806c590ecb86f773d3cd",
+      "reason": "Portable reference-oracle paths and/or fixed shipped checksum/config identities replace private workspace-relative paths; same original test-case IDs retained."
+    },
+    {
+      "file": "test_feasibility_entropy.py",
+      "original_sha256": "c3018bb8f87360f1973c48a197dc734540acea930a38147baf4292b10ebb4a74",
+      "shipped_sha256": "bce5671a88cd7606adeb4328b605392efaf260c1938a683be01997adb536340f",
+      "reason": "Portable reference-oracle paths and/or fixed shipped checksum/config identities replace private workspace-relative paths; same original test-case IDs retained."
+    }
+  ],
+  "reference_snapshot_hashes": {
+    "tests/_snapshots/expected_core/baseline-cap200m.json": "01aab9780377df669d74b9b542c3ac1efb20f63795c29895ea2affe24918e59c",
+    "tests/_snapshots/expected_core/baseline.py": "4620619d0e00b77fce73982dbabe69f0ca8bcfebcb82aba0d08ffd85bddb77f2",
+    "tests/_snapshots/expected_core/domain.py": "852ce9e9eb563dbd1b63f4f33881eb9b5961a3c443d3d596252a882ee204aad3",
+    "tests/_snapshots/expected_core/learning.py": "b1b5fa9e7cc2c84fda9546aa8e2043ef2832b3330bb6b76cdbb396295444dc91",
+    "tests/_snapshots/expected_core/operational_recovery.py": "83d56c9fe1b9fa5fa92a3bb9695fc25757fc3c4879f6c4dbd6bc15412b06ee04",
+    "tests/_snapshots/expected_core/reference-typed-guard.json": "3d686d42b29492dba20d364bddca55aec4686e0e54662afeb753d24af7e8ca5d",
+    "tests/_snapshots/v3_acquisition.py": "e109630096e692dd747f0e424fea23e60729f7d2422bd024a3d7d630c1ce071f",
+    "tests/_snapshots/v4_acquisition.py": "aa0711418e466911b3600104ccfc94c54956f1071b736e4ae8ca5a32cb3fca4f",
+    "tests/_snapshots/v4_core/acquisition.py": "aa0711418e466911b3600104ccfc94c54956f1071b736e4ae8ca5a32cb3fca4f",
+    "tests/_snapshots/v4_core/backend.py": "33db2b9e5485b3daeb3b983a3b6b9714d34341e64320e02f0ca1ddd5939784b9",
+    "tests/_snapshots/v4_core/cards.py": "8ab5fb9be0fd69d24a5c4af43e39dcac97d8496cc424ed6cf8be53754e9b22f5",
+    "tests/_snapshots/v4_core/cli.py": "9cdcac8d20797bfde981c0d21bf88780088ca8aef1019ecc733c51e1b76c5777",
+    "tests/_snapshots/v4_core/domain.py": "852ce9e9eb563dbd1b63f4f33881eb9b5961a3c443d3d596252a882ee204aad3",
+    "tests/_snapshots/v4_core/execution.py": "ca044304054147a764602701788fc45f5982a30f60c56656eee455356488bf63",
+    "tests/_snapshots/v4_core/gp_learning.py": "25928c21be362367282ef0727c5f24def720c950d463c60f58ff4e3585e5f39e",
+    "tests/_snapshots/v4_core/historical.py": "05b0b3b4e88e5b06059f99fc631dd9d378dac5725b68039754439010afb8846b",
+    "tests/_snapshots/v4_core/learning.py": "df1883d1408a44d60c97666f4758fe91bbd6ec763d119a7b88917c2e2770c770",
+    "tests/_snapshots/v4_core/runner.py": "2d6b04dd3449567aa14e35deb34bc7e6d172441a908f7946226a334aa344518b",
+    "tests/_snapshots/v4_core/settings.py": "1e01033a70d5cffdf1bf20934088afe109dea2ce4008befaa3e96fbc57d53a9b"
+  },
+  "scientific_source_or_configuration_modified": false,
+  "new_real_physics_calls": 0
+}

@@ -1,0 +1,395 @@
+"""Finite-pool soft ranking with explicit exploration and exact deduplication.
+
+Selection is a discovery heuristic, not a replacement likelihood, posterior
+sampler or relaxation of the true physical acceptance windows.
+"""
+import numpy as np
+import torch
+from fractions import Fraction
+from .domain import BOUNDS, CHI2_MAX, HIGGS_INTERVAL, OMEGA_INTERVAL, parameter_array, sample, validate_observables
+
+
+def normal_interval_log_probability(mean, standard_deviation, lower, upper, *, include_lower=False):
+    """Stable marginal Gaussian window mass, not a calibrated joint probability.
+
+    Switch to reflected survival tails on the positive side so subtracting
+    two CDF values close to one does not erase a small interval probability.
+    Zero predictive standard deviation is handled as a deterministic value.
+    """
+    mean = np.asarray(mean, dtype=float)
+    standard_deviation = np.asarray(standard_deviation, dtype=float)
+    if mean.shape != standard_deviation.shape or np.any(standard_deviation < 0):
+        raise ValueError("Invalid Gaussian interval shapes or negative spread")
+    result = np.full(mean.shape, -np.inf)
+    deterministic = standard_deviation == 0
+    above = mean >= lower if include_lower else mean > lower
+    result[deterministic & above & (mean < upper)] = 0.
+    positive = standard_deviation > 0
+    if not positive.any():
+        return result
+    za = (lower - mean[positive]) / standard_deviation[positive]
+    zb = (upper - mean[positive]) / standard_deviation[positive]
+    logcdf = lambda z: torch.special.log_ndtr(torch.as_tensor(z.copy(), dtype=torch.float64)).numpy()
+    if np.isneginf(lower):
+        result[positive] = logcdf(zb)
+    elif np.isposinf(upper):
+        result[positive] = logcdf(-za)
+    else:
+        # Compare bounds' midpoint with zero without adding enormous tails.
+        right_tail = mean[positive] < (lower + upper) / 2.
+        larger = np.where(right_tail, -za, zb)
+        smaller = np.where(right_tail, -zb, za)
+        large_log, small_log = logcdf(larger), logcdf(smaller)
+        delta = np.minimum(small_log - large_log, 0.)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            logmass = large_log + np.log(-np.expm1(delta))
+        result[positive] = logmass
+    return result
+
+
+def acquisition(prediction, settings):
+    """Log marginal-feasibility ranking and log disagreement exploration.
+
+    GP marginal distributions are a working model. Multiplying their masses
+    ignores output correlations and does not claim calibrated joint coverage.
+    The logistic compatibility path is used only if no transformed std exists.
+    """
+    y = np.asarray(prediction["mean"], dtype=float)
+    transformed = np.asarray(prediction["mean_transformed"], dtype=float)
+    uncertainty = np.asarray(prediction["uncertainty"], dtype=float)
+    physical = np.asarray(prediction["physical_probability"], dtype=float)
+    hb = np.asarray(prediction["hb_probability"], dtype=float)
+    n = len(y)
+    if (y.shape != (n, 4) or transformed.shape != (n, 4)
+            or any(v.shape != (n,) for v in (uncertainty, physical, hb))):
+        raise ValueError("Inconsistent modern prediction shapes")
+    solver = np.asarray(prediction.get("solver_probability", np.ones(n)), dtype=float)
+    if solver.shape != (n,):
+        raise ValueError("Inconsistent solver probability shape")
+    finite = (np.isfinite(y).all(axis=1) & np.isfinite(transformed).all(axis=1)
+              & np.isfinite(uncertainty) & (uncertainty >= 0)
+              & np.isfinite(physical) & (physical >= 0) & (physical <= 1)
+              & np.isfinite(hb) & (hb >= 0) & (hb <= 1)
+              & np.isfinite(solver) & (solver >= 0) & (solver <= 1))
+    spread = prediction.get("std_transformed")
+    if spread is not None:
+        spread = np.asarray(spread, dtype=float)
+        if spread.shape != (n, 4):
+            raise ValueError("std_transformed must have N x 4 physical/log-label units")
+        finite &= np.isfinite(spread).all(axis=1) & (spread >= 0).all(axis=1)
+    exploit, uncertain = np.full(n, -np.inf), np.full(n, -np.inf)
+    if finite.any():
+        mh, mH, chi2 = y[finite, :3].T
+        logomega = transformed[finite, 3]
+        p = np.clip(physical[finite], settings.probability_floor, 1.)
+        ph = (np.clip(hb[finite], settings.probability_floor, 1.)
+              if settings.target_policy == "paper-higgs" else np.ones(len(p)))
+        ps = np.clip(solver[finite], settings.probability_floor, 1.)
+        if spread is not None:
+            sd = spread[finite]
+            log_soft_cuts = (
+                normal_interval_log_probability(mh, sd[:, 0], 0., np.inf)
+                + normal_interval_log_probability(mH, sd[:, 1], *HIGGS_INTERVAL)
+                + normal_interval_log_probability(chi2, sd[:, 2], 0., CHI2_MAX, include_lower=True)
+                + normal_interval_log_probability(logomega, sd[:, 3],
+                                                  *np.log(OMEGA_INTERVAL)))
+        else:
+            margins = np.column_stack([
+                (mH - HIGGS_INTERVAL[0]) / settings.mH_soft_width,
+                (HIGGS_INTERVAL[1] - mH) / settings.mH_soft_width,
+                (CHI2_MAX - chi2) / settings.chi2_soft_width,
+                (logomega - np.log(OMEGA_INTERVAL[0])) / settings.lnomega_soft_width,
+                (np.log(OMEGA_INTERVAL[1]) - logomega) / settings.lnomega_soft_width,
+                mh / settings.mh_soft_width, chi2 / settings.chi2_soft_width])
+            log_soft_cuts = -np.logaddexp(0., -margins).sum(axis=1)
+        # This experiment seeks joint-constraint discoveries, not draws from
+        # the original Eq.7 density. True Eq.7 acceptance remains unchanged.
+        exploit[finite] = np.log(p) + np.log(ph) + np.log(ps) + log_soft_cuts
+        with np.errstate(divide="ignore"):
+            uncertain[finite] = np.log(uncertainty[finite]) + np.log(p) + np.log(ph) + np.log(ps)
+    return exploit, uncertain
+
+
+def true_violation(record, settings):
+    """Rank only already evaluated physical rows, without external coordinates.
+
+    Dimensionless distances outside the original windows are summed. This is
+    a candidate-generation heuristic, never a target decision. A known HB
+    exclusion adds a penalty; missing HB information does not become a label.
+    """
+    if record.get("status") != "ok":
+        return np.inf
+    try:
+        mh, mH, chi2, omega = validate_observables(record.get("observables"))
+    except (TypeError, ValueError):
+        return np.inf
+    logomega = np.log(omega)
+    value = (max(HIGGS_INTERVAL[0] - mH, mH - HIGGS_INTERVAL[1], 0.) / settings.mH_soft_width
+             + max(chi2 - CHI2_MAX, 0.) / settings.chi2_soft_width
+             + max(np.log(OMEGA_INTERVAL[0]) - logomega,
+                   logomega - np.log(OMEGA_INTERVAL[1]), 0.) / settings.lnomega_soft_width)
+    if settings.target_policy == "paper-higgs" and record.get("hb_result") == 0:
+        ratio = record.get("hb_obsratio")
+        # Accept only an explicitly available measured ratio. Do not infer
+        # one from surrogate output or a missing/unknown HB result.
+        if ratio is None and isinstance(record.get("diagnostics"), dict):
+            ratio = record["diagnostics"].get("HB_obsratio")
+        if isinstance(ratio, (int, float)) and np.isfinite(ratio) and ratio > 0:
+            value += max(1., np.log(ratio))
+        else:
+            value += 1.
+    return float(value)
+
+
+def candidate_pool(records, settings, rng):
+    """Mix global proposals with reflected Gaussian proposals around true elites.
+
+    All centres are taken from this run's current evaluated records. No stored
+    target coordinates, fitted historical weights, or external data enter.
+    Scales are standard deviations in the unit parameter box. Reflection
+    keeps proposals in bounds without an artificial boundary point mass.
+    """
+    ranked = [(true_violation(row, settings), i, row) for i, row in enumerate(records)]
+    ranked = [entry for entry in ranked if np.isfinite(entry[0])]
+    ranked.sort(key=lambda entry: (entry[0], entry[1]))
+    elites = []
+    seen = set()
+    for violation, _, row in ranked:
+        key = exact_key(row["x"])
+        if key not in seen:
+            elites.append((violation, row)); seen.add(key)
+        if len(elites) == settings.local_elites:
+            break
+    local_count = int(settings.pool_size * settings.local_fraction) if elites else 0
+    global_count = settings.pool_size - local_count
+    global_pool = sample(global_count, rng)
+    labels = ["global_uniform"] * global_count
+    if local_count:
+        centres = parameter_array([row["x"] for _, row in elites])
+        unit = (centres - BOUNDS[:, 0]) / np.ptp(BOUNDS, axis=1)
+        # Cycling assignments ensures small local pools still cover several
+        # elites and scales; a permutation avoids order-based tie advantages.
+        assignments = np.arange(local_count)
+        rng.shuffle(assignments)
+        elite_indices = assignments % len(elites)
+        scale_indices = (assignments // len(elites)) % len(settings.local_scales)
+        sigma = np.asarray(settings.local_scales)[scale_indices]
+        u = unit[elite_indices] + rng.normal(size=(local_count, 3)) * sigma[:, None]
+        reflected = np.mod(u, 2.)
+        reflected = np.where(reflected <= 1., reflected, 2. - reflected)
+        local_pool = BOUNDS[:, 0] + reflected * np.ptp(BOUNDS, axis=1)
+        pool = np.concatenate([global_pool, local_pool])
+        labels += ["local_true_elite"] * local_count
+    else:
+        pool = global_pool
+    diagnostics = {"global_uniform": global_count, "local_true_elite": local_count,
+                   "elite_eval_ids": [row.get("eval_id") for _, row in elites],
+                   "elite_violations": [v for v, _ in elites],
+                   "local_scales_unit_box": list(settings.local_scales),
+                   "elite_source": "current_run_true_ok_records_only"}
+    return pool, labels, diagnostics
+
+
+def exact_key(x):
+    """Exact float identities; neither rounded coordinates nor nearby points."""
+    return tuple(float(v).hex() for v in x)
+
+
+def _unique_uniform(count, rng, excluded):
+    points, keys = [], set(excluded)
+    # Finite guard matters for malformed RNG/test samplers; ordinary continuous
+    # sampling almost never repeats a float64 point in this 3D box.
+    attempts = 0
+    while len(points) < count and attempts < max(1000, 100 * count):
+        candidates = sample(max(1, count - len(points)), rng)
+        attempts += len(candidates)
+        for x in candidates:
+            key = exact_key(x)
+            if key not in keys:
+                points.append(x)
+                keys.add(key)
+    if len(points) != count:
+        raise RuntimeError("Uniform sampler could not generate enough unique points")
+    return points
+
+
+def diverse_indices(pool, scores, count, selected, radius, rng):
+    """Greedy log-utility plus soft nearest-anchor repulsion.
+
+    A radius is a soft scale, not a hard exclusion threshold. Each chosen point
+    is scored by log_utility + log(1-exp(-(nearest_distance/radius)**2)).
+    Very poor faraway candidates therefore cannot win merely by filling a hard
+    distance quota. Exact duplicates still have negative-infinite repulsion.
+    Distances refer to this batch's chosen and reserved random points, measured
+    in the unit parameter box. Full-history nearest distances are a separate
+    evaluation metric and are not represented by this field.
+    """
+    if count == 0:
+        return [], []
+    unit = (pool - BOUNDS[:, 0]) / (BOUNDS[:, 1] - BOUNDS[:, 0])
+    anchor = np.asarray(selected, dtype=float).reshape(-1, 3)
+    anchor = (anchor - BOUNDS[:, 0]) / (BOUNDS[:, 1] - BOUNDS[:, 0])
+    scores = np.asarray(scores, dtype=float)
+    tie = rng.random(len(pool))
+    active = np.isfinite(scores)
+    distance = (np.linalg.norm(unit[:, None] - anchor[None], axis=2).min(axis=1)
+                if len(anchor) else np.full(len(pool), np.inf))
+    chosen, details = [], []
+    for _ in range(count):
+        if radius > 0:
+            with np.errstate(divide="ignore", over="ignore"):
+                penalty = np.log(-np.expm1(-np.square(distance / radius)))
+        else:
+            penalty = np.zeros(len(pool))
+        penalized = np.where(active, scores + penalty, -np.inf)
+        best = np.max(penalized)
+        if not np.isfinite(best):
+            break
+        candidates = np.flatnonzero(penalized == best)
+        i = int(candidates[np.argmin(tie[candidates])])
+        details.append({"raw_acquisition": float(scores[i]),
+                        "penalized_acquisition": float(penalized[i]),
+                        "min_distance": float(distance[i]) if np.isfinite(distance[i]) else None,
+                        "raw_utility_gap": float(np.max(scores[active]) - scores[i])})
+        chosen.append(i)
+        active[i] = False
+        distance = np.minimum(distance, np.linalg.norm(unit - unit[i], axis=1))
+    return chosen, details
+
+
+def batch_quotas(settings, count):
+    """Preserve unfiltered exploration even in a truncated final batch."""
+    if type(count) is not int or count < 1 or count > settings.batch_points:
+        raise ValueError("count must be between 1 and the configured batch size")
+    random_count = min(count, max(1, int(np.ceil(count * settings.random_extra / settings.batch_points))))
+    remaining = count - random_count
+    model_total = settings.exploit + settings.uncertain
+    exploit_count = int(np.floor(remaining * settings.exploit / model_total))
+    return exploit_count, remaining - exploit_count, random_count
+
+
+def interleave_execution(batch):
+    """Schedule fixed candidates proportionally, beginning with exploration.
+
+This changes execution order only: no candidate, score, constraint or random
+stream is changed. Preserve within-category rank order. A category-concatenated
+batch could reach the consecutive-error guard before any reserved exploration
+was evaluated; interleaving gives each category an early execution opportunity.
+The same five-error guard still applies to the actual execution sequence.
+"""
+    groups = {}
+    for item in batch:
+        groups.setdefault(item["origin"], []).append(item)
+    priority = {name: index for index, name in enumerate(
+        ("random", "exploit", "uncertain", "uniform_fallback"))}
+    unknown = sorted(set(groups) - set(priority))
+    priority.update({name: len(priority) + i for i, name in enumerate(unknown)})
+    scheduled = []
+    for origin, items in groups.items():
+        for j, item in enumerate(items):
+            scheduled.append((Fraction(2*j + 1, 2*len(items)), priority[origin], j, item))
+    ordered = [entry[-1] for entry in sorted(scheduled, key=lambda entry: entry[:3])]
+    first_random = next((i for i, item in enumerate(ordered) if item["origin"] == "random"), None)
+    if first_random is not None and first_random != 0:
+        ordered.insert(0, ordered.pop(first_random))
+    return ordered
+
+
+def propose_batch(model, records, settings, rng, *, explore_rng, count=None):
+    """Return a bounded batch and audit diagnostics.
+
+`rng` is for the finite candidate pool/ranking; `explore_rng` is independent
+and never consumed by prediction/ranking. Uniform exploration is generated
+first, bypassing all surrogates, then model points avoid those exact inputs.
+Fallback is explicitly labelled and never presented as a learned proposal.
+"""
+    count = settings.batch_points if count is None else count
+    ne, nu, nr = batch_quotas(settings, count)
+    prior = {exact_key(r["x"]) for r in records}
+    diagnostics = {"requested": count, "quotas": {"exploit": ne, "uncertain": nu, "random": nr},
+                   "pool_size": 0, "unique_pool_size": 0, "diversity_relaxations": 0,
+                   "fallback_reason": None, "selection_is_posterior": False,
+                   "execution_order": "proportional_interleave_random_first",
+                   "diversity_mode": "soft_log_nearest_anchor_repulsion",
+                   "min_distance_scope": "unit_box_distance_to_previously_selected_or_reserved_points_in_this_batch",
+                   "acquisition_mode": "not_ready"}
+    exploration = _unique_uniform(nr, explore_rng, prior)
+    if model is None or not model.ready:
+        points = _unique_uniform(ne + nu, rng, prior | {exact_key(x) for x in exploration})
+        diagnostics.update(fallback_reason="insufficient_training_data", fallback_count=ne + nu,
+                           selected_counts={"exploit": 0, "uncertain": 0,
+                                            "random": nr, "uniform_fallback": ne + nu})
+        batch = [{"x": x, "origin": "uniform_fallback", "predicted": None} for x in points]
+        batch.extend({"x": x, "origin": "random", "predicted": None} for x in exploration)
+        return interleave_execution(batch), diagnostics
+    excluded = prior | {exact_key(x) for x in exploration}
+    raw_pool, raw_sources, pool_info = candidate_pool(records, settings, rng)
+    diagnostics["candidate_generation"] = pool_info
+    unique_pool = []
+    pool_sources = []
+    seen = set(excluded)
+    for x, source in zip(raw_pool, raw_sources):
+        key = exact_key(x)
+        if key not in seen:
+            unique_pool.append(x); pool_sources.append(source); seen.add(key)
+    pool = np.asarray(unique_pool, dtype=float).reshape(-1, 3)
+    diagnostics.update(pool_size=len(raw_pool), unique_pool_size=len(pool))
+    batch = []
+    if len(pool):
+        parameter_array(pool)
+        prediction = model.predict(pool)
+        diagnostics["acquisition_mode"] = ("gp_marginal_feasibility" if "std_transformed" in prediction
+                                           else "logistic_compatibility")
+        diagnostics["calibrated_joint_probability"] = False
+        exploit_scores, uncertainty_scores = acquisition(prediction, settings)
+        diagnostics.update(finite_exploit_scores=int(np.isfinite(exploit_scores).sum()),
+                           finite_uncertainty_scores=int(np.isfinite(uncertainty_scores).sum()))
+        selected = []
+        for origin, scores, needed in (("exploit", exploit_scores, ne),
+                                        ("uncertain", uncertainty_scores, nu)):
+            scores = scores.copy()
+            scores[selected] = -np.inf
+            anchor = exploration + [pool[i] for i in selected]
+            indices, details = diverse_indices(pool, scores, needed, anchor,
+                                                settings.diversity_radius, rng)
+            selected.extend(indices)
+            for i, audit in zip(indices, details):
+                batch.append({"x": pool[i], "origin": origin,
+                              **audit,
+                              "candidate_source": pool_sources[i],
+                              "predicted": prediction["mean"][i].tolist(),
+                              "uncertainty": float(prediction["uncertainty"][i]),
+                              "physical_probability": float(prediction["physical_probability"][i]),
+                              "hb_probability": float(prediction["hb_probability"][i]),
+                              "solver_probability": float(prediction.get("solver_probability", np.ones(len(pool)))[i])})
+    missing = ne + nu - len(batch)
+    if missing:
+        excluded = prior | {exact_key(x) for x in exploration} | {exact_key(r["x"]) for r in batch}
+        # A model-dependent fallback consumes the pool RNG, not the reserved
+        # exploration RNG, so it cannot shift future exploration draws.
+        fallback = _unique_uniform(missing, rng, excluded)
+        batch.extend({"x": x, "origin": "uniform_fallback", "predicted": None} for x in fallback)
+        diagnostics["fallback_reason"] = "insufficient_finite_unique_ranked_candidates"
+    batch.extend({"x": x, "origin": "random", "predicted": None} for x in exploration)
+    diagnostics["fallback_count"] = missing
+    diagnostics["selected_counts"] = {key: sum(r["origin"] == key for r in batch)
+                                       for key in ("exploit", "uncertain", "random", "uniform_fallback")}
+    diagnostics["selected_candidate_sources"] = {
+        source: sum(row.get("candidate_source") == source for row in batch)
+        for source in ("global_uniform", "local_true_elite")}
+    audits = [row for row in batch if "raw_acquisition" in row]
+    if audits:
+        penalties = np.array([row["raw_acquisition"] - row["penalized_acquisition"] for row in audits])
+        gaps = np.array([row["raw_utility_gap"] for row in audits])
+        distances = [row["min_distance"] for row in audits if row["min_distance"] is not None]
+        diagnostics["selection_tradeoff"] = {
+            "mean_log_repulsion_cost": float(penalties.mean()),
+            "max_log_repulsion_cost": float(penalties.max()),
+            "mean_raw_utility_gap": float(gaps.mean()),
+            "max_raw_utility_gap": float(gaps.max()),
+            "min_selected_distance": min(distances) if distances else None,
+            "median_selected_distance": float(np.median(distances)) if distances else None,
+            "selected_below_soft_radius": sum(d < settings.diversity_radius for d in distances)}
+    if len(batch) != count or len({exact_key(r["x"]) for r in batch}) != count:
+        raise RuntimeError("Internal modern batch size or uniqueness failure")
+    return interleave_execution(batch), diagnostics
